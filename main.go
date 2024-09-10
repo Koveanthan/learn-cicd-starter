@@ -11,27 +11,26 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 
 	"github.com/bootdotdev/learn-cicd-starter/internal/database"
-
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
-type apiConfig struct {
+type apiConfig struct{
 	DB *database.Queries
 }
 
 //go:embed static/*
 var staticFiles embed.FS
 
-func main() {
+func main(){
 	err := godotenv.Load(".env")
-	if err != nil {
+	if err != nil{
 		log.Printf("warning: assuming default configuration. .env unreadable: %v", err)
 	}
 
 	port := os.Getenv("PORT")
-	if port == "" {
+	if port == ""{
 		log.Fatal("PORT environment variable is not set")
 	}
 
@@ -40,12 +39,12 @@ func main() {
 	// https://github.com/libsql/libsql-client-go/#open-a-connection-to-sqld
 	// libsql://[your-database].turso.io?authToken=[your-auth-token]
 	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
+	if dbURL == ""{
 		log.Println("DATABASE_URL environment variable is not set")
 		log.Println("Running without CRUD endpoints")
-	} else {
+	} else{
 		db, err := sql.Open("libsql", dbURL)
-		if err != nil {
+		if err != nil{
 			log.Fatal(err)
 		}
 		dbQueries := database.New(db)
@@ -64,21 +63,21 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/", func(w http.ResponseWriter, r *http.Request){
 		f, err := staticFiles.Open("static/index.html")
-		if err != nil {
+		if err != nil{
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		defer f.Close()
-		if _, err := io.Copy(w, f); err != nil {
+		if _, err := io.Copy(w, f); err != nil{
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
 
 	v1Router := chi.NewRouter()
 
-	if apiCfg.DB != nil {
+	if apiCfg.DB != nil{
 		v1Router.Post("/users", apiCfg.handlerUsersCreate)
 		v1Router.Get("/users", apiCfg.middlewareAuth(apiCfg.handlerUsersGet))
 		v1Router.Get("/notes", apiCfg.middlewareAuth(apiCfg.handlerNotesGet))
